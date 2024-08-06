@@ -17,12 +17,40 @@ impl <'a> Lexer<'a> {
         }
     }
 
+    fn collect_words(&mut self) -> Option<&'a[char]>  {
+        let mut n = 0;
+        while n < self.content.len() && self.content[n].is_alphanumeric() {
+            n += 1;
+        }
+       let token =  &self.content[0..n];
+       self.content = &self.content[n..];
+       return Some(token);
+    }
+
+    fn collect_numbers(&mut self) -> Option<&'a[char]> {
+        let mut n = 0;
+        while n < self.content.len() && self.content[n].is_numeric() {
+            n += 1;
+        }
+        let token =  &self.content[0..n];
+        self.content = &self.content[n..];
+        return Some(token);
+    }
+
     fn next_token(&mut self) -> Option<&'a[char]> {
         self.trim_left();
         if self.content.len() == 0 {
             return None;
         }
-        todo!()
+        if self.content[0].is_numeric() {
+            return self.collect_numbers()
+        }
+        if self.content[0].is_alphabetic() {
+            return self.collect_words()
+        }
+        let token = &self.content[0..1];
+        self.content = &self.content[1..];
+        return Some(token);
     }
 }
 
@@ -38,12 +66,12 @@ fn main() -> io::Result<()> {
     let dir_path = "docs.gl/gl4";
     let dir = fs::read_dir(dir_path)?;
 
-    let content = read_entire_xml_file("docs.gl/gl4/glVertextAttribDivisor.xhtml")?
+    let content = read_entire_xml_file("docs.gl/gl4/glVertexAttribDivisor.xhtml")?
     .chars()
     .collect::<Vec<_>>();
 
     for token in Lexer::new(&content) {
-        println!("{token:?}");
+        println!("{token}", token = token.iter().collect::<String>());
     }
 
     // let all_documents = HashMap::<Path, HashMap<String, usize>>::new();
@@ -65,6 +93,7 @@ fn read_entire_xml_file<P: AsRef<Path>>(file_path: P) -> io::Result<String> {
     let event = event.expect("TODO");
     if let XmlEvent::Characters(text ) = event {
         content.push_str(&text);
+        content.push_str(" ");
     }
 }
 Ok(content)
